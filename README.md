@@ -50,6 +50,32 @@ Three microservices. One Redis brain. Zero blocking.
 
 ---
 
+
+## 🧩 Key Concepts
+
+**Why Redis?**
+Redis keeps all jobs in memory — making reads/writes 
+microseconds fast. Even if a service crashes, jobs 
+stay in Redis and get picked up when it restarts.
+
+**Why BullMQ?**
+Raw Redis queues have no retry logic, no priority system, 
+no delayed jobs. BullMQ adds all of that on top of Redis 
+with a clean API.
+
+**Why Microservices?**
+If mail-server crashes, order-server keeps running. 
+Services fail independently — the whole system doesn't go down.
+
+
+## ⚡ Performance
+
+- Redis can handle **1 million operations per second**
+- BullMQ supports **thousands of concurrent jobs**
+- Each worker processes jobs in **parallel threads**
+- Failed jobs **auto-retry** up to configured max attempts
+
+
 ## 🚀 Quick Start
 
 ```bash
