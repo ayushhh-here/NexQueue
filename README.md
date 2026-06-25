@@ -69,6 +69,12 @@ cd mail-server && node app.js     # :5002
 
 ---
 
+## 💡 Why I Built This
+
+Most tutorials teach you CRUD apps. I wanted to understand 
+how real companies handle millions of background tasks — 
+emails, notifications, order processing — without slowing 
+down the main application. This project is my answer to that.
 > 🚀 This is my first backend project — built from scratch to understand how real-world distributed systems work.
 
 
