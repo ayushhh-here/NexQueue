@@ -1,173 +1,82 @@
-# Distributed Job Queue System
+# 🔁 Distributed Job Queue System
 
-Ever wondered how apps like Swiggy send you an order confirmation email 
-while simultaneously updating your order status and notifying the 
-restaurant — all at the same time? That's exactly what this system does.
+Not every task needs to happen right now.
 
-This project implements a distributed job queue architecture where 
-multiple services communicate asynchronously through a shared Redis 
-broker, without blocking each other.
+This system is built around one idea — decouple the work from 
+the request. When a user places an order, they shouldn't wait 
+for emails to send, inventory to update, and notifications to 
+fire before getting a response. Those jobs go into a queue. 
+Workers pick them up. Life goes on.
 
----
-
-## The Problem It Solves
-
-In a monolithic app, if sending an email fails — everything fails.
-This system decouples tasks into independent workers so:
-- A failed email doesn't crash your order
-- Services scale independently
-- Jobs retry automatically on failure
-- No task is ever permanently lost# Distributed Job Queue System
-
-Ever wondered how apps like Swiggy send you an order confirmation email 
-while simultaneously updating your order status and notifying the 
-restaurant — all at the same time? That's exactly what this system does.
-
-This project implements a distributed job queue architecture where 
-multiple services communicate asynchronously through a shared Redis 
-broker, without blocking each other.
+This is how production systems at scale actually work.
 
 ---
 
-## The Problem It Solves
+## 🧠 Architecture
+User Request → user-service → Redis Queue → Workers
+                                                ↓
+                                              order-server  +  mail-server
 
-In a monolithic app, if sending an email fails — everything fails.
-This system decouples tasks into independent workers so:
-- A failed email doesn't crash your order
-- Services scale independently
-- Jobs retry automatically on failure
-- No task is ever permanently lost
+Three microservices. One Redis brain. Zero blocking.
 
----
-
-## How It Works
-
-Three microservices run independently:
-
-**user-service** (Port 5001)
-Accepts incoming requests and pushes jobs into the Redis queue.
-
-**order-server** (Port 5000)
-Picks up order-related jobs from the queue and processes them.
-
-**mail-server** (Port 5002)
-Listens for email jobs and handles background mail delivery.
-
-Redis sits in the middle as the brain — storing, distributing, 
-and managing all jobs across services.
+| Service | Port | Job |
+|---|---|---|
+| user-service | 5001 | Receives requests, queues jobs |
+| order-server | 5000 | Processes order tasks |
+| mail-server | 5002 | Handles email jobs |
 
 ---
 
-## Tech Stack
+## ⚙️ Features
 
-- Node.js + Express.js
-- Redis
-- BullMQ
-- Docker
+- Priority-based job scheduling
+- Delayed execution
+- Auto-retry with exponential backoff
+- Dead-letter queue for failed jobs  
+- Concurrent workers
+- Horizontally scalable
 
 ---
 
-## Getting Started
+## 🛠️ Tech Stack
 
-Make sure Docker is installed and running, then:
+| Layer | Technology |
+|---|---|
+| Runtime | Node.js |
+| Framework | Express.js |
+| Queue | BullMQ |
+| Broker | Redis |
+| Container | Docker |
+
+---
+
+## 🚀 Quick Start
 
 ```bash
-# Start Redis
+# 1. Start Redis
 docker run -d -p 6379:6379 redis
 
-# Install dependencies
+# 2. Install dependencies
 cd mail-server && npm install
-cd ../order-server && npm install  
+cd ../order-server && npm install
 cd ../user-service && npm install
 
-# Run all three services in separate terminals
-cd user-service && node app.js
-cd order-server && node app.js
-cd mail-server && node app.js
+# 3. Start services (3 separate terminals)
+cd user-service && node app.js    # :5001
+cd order-server && node app.js    # :5000
+cd mail-server && node app.js     # :5002
 ```
 
-## What I Learned
-
-Building this gave me hands-on understanding of:
-- Why distributed systems exist and when to use them
-- How message queues prevent data loss
-- Worker concurrency and job prioritization
-- Fault tolerance through retries and dead-letter queues
-- Designing backend systems that scale horizontally
-
 ---
 
-## What's Next
+> 🚀 This is my first backend project — built from scratch to understand how real-world distributed systems work.
 
-- Deploy on Railway or Render
-- Add a live monitoring dashboard
-- Integrate real email service (Nodemailer/SendGrid)
-- Add authentication layer
-- CI/CD with GitHub Actions
 
----
+## 🔮 Roadmap
 
-## How It Works
-
-Three microservices run independently:
-
-**user-service** (Port 5001)
-Accepts incoming requests and pushes jobs into the Redis queue.
-
-**order-server** (Port 5000)
-Picks up order-related jobs from the queue and processes them.
-
-**mail-server** (Port 5002)
-Listens for email jobs and handles background mail delivery.
-
-Redis sits in the middle as the brain — storing, distributing, 
-and managing all jobs across services.
-
----
-
-## Tech Stack
-
-- Node.js + Express.js
-- Redis
-- BullMQ
-- Docker
-
----
-
-## Getting Started
-
-Make sure Docker is installed and running, then:
-
-```bash
-# Start Redis
-docker run -d -p 6379:6379 redis
-
-# Install dependencies
-cd mail-server && npm install
-cd ../order-server && npm install  
-cd ../user-service && npm install
-
-# Run all three services in separate terminals
-cd user-service && node app.js
-cd order-server && node app.js
-cd mail-server && node app.js
-```
-
-## What I Learned
-
-Building this gave me hands-on understanding of:
-- Why distributed systems exist and when to use them
-- How message queues prevent data loss
-- Worker concurrency and job prioritization
-- Fault tolerance through retries and dead-letter queues
-- Designing backend systems that scale horizontally
-
----
-
-## What's Next
-
-- Deploy on Railway or Render
-- Add a live monitoring dashboard
-- Integrate real email service (Nodemailer/SendGrid)
-- Add authentication layer
-- CI/CD with GitHub Actions
+- [ ] Live monitoring dashboard
+- [ ] Real email integration via Nodemailer
+- [ ] Kubernetes deployment
+- [ ] Prometheus + Grafana metrics
+- [ ] WebSocket live job logs
+- [ ] CI/CD with GitHub Actions
