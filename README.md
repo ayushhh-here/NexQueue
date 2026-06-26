@@ -112,3 +112,6 @@ down the main application. This project is my answer to that.
 - [ ] Prometheus + Grafana metrics
 - [ ] WebSocket live job logs
 - [ ] CI/CD with GitHub Actions
+
+
+cheers !!!
