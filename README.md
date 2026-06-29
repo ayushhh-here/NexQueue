@@ -16,9 +16,6 @@
 
 <br/>
 
-[![GitHub commit activity](https://img.shields.io/github/commit-activity/t/ayushhh-here/NexQueue?color=CC0000&style=flat-square)](https://github.com/ayushhh-here/NexQueue/commits/main)
-[![GitHub repo size](https://img.shields.io/github/repo-size/ayushhh-here/NexQueue?color=CC0000&style=flat-square)](https://github.com/ayushhh-here/NexQueue)
-[![GitHub last commit](https://img.shields.io/github/last-commit/ayushhh-here/NexQueue?color=CC0000&style=flat-square)](https://github.com/ayushhh-here/NexQueue/commits/main)
 
 </div>
 
