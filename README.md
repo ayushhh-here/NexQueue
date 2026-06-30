@@ -11,7 +11,7 @@
 
 <br/>
 
-> **A production-ready distributed job queue system with priority scheduling,**
+> **A pre-production ready distributed job queue system with priority scheduling,**
 > **automatic retries, and real-time worker processing.**
 
 <br/>
