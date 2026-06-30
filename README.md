@@ -27,7 +27,7 @@ Most backend tutorials stop at REST APIs and CRUD operations. Real production sy
 
 When a user places an order on an e-commerce platform, they should not wait for the confirmation email to send, the inventory to update, and the analytics event to fire before getting a response. All of that is background work. It goes into a queue. Workers pick it up asynchronously. The user gets a near-instant response, and all the heavy lifting happens behind the scenes.
 
-NexQueue is my ground-up implementation of this exact pattern — a fully working distributed job queue built with Node.js, Redis, and BullMQ. Three independent microservices communicate through a shared in-memory queue broker, with priority-based scheduling, exponential backoff retries, dead-letter queues for failed jobs, and complete fault isolation between services.
+NexQueue is my ground-up implementation of this exact pattern — a fully working distributed job queue built with Node.js, Redis, and BullMQ. Independent microservices communicate through a shared in-memory queue broker, with priority-based scheduling, exponential backoff retries, dead-letter queues for failed jobs, and complete fault isolation between services.
 
 This is the architecture behind Shopify's order pipeline, GitHub's notification system, and Stripe's payment processing at scale.
 
@@ -61,7 +61,7 @@ This is the architecture behind Shopify's order pipeline, GitHub's notification 
      └─────────────────────────┘         └─────────────────────────┘
 ```
 
-**Three microservices. One Redis brain. Zero blocking on the main thread.**
+**Independent microservices. One Redis brain. Zero blocking on the main thread.**
 
 | Service | Port | Role |
 |---|---|---|
