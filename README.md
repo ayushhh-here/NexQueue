@@ -1,4 +1,4 @@
-# ⚡ NexQueue
+#  NexQueue
 
 <div align="center">
 
@@ -21,9 +21,9 @@
 
 ---
 
-## 🧠 What is NexQueue?
+##  What is NexQueue?
 
-Most backend tutorials stop at REST APIs and CRUD operations. Real production systems are different.
+Most backend tutorials stop at REST APIs and CRUD operations.
 
 When a user places an order on an e-commerce platform, they should not wait for the confirmation email to send, the inventory to update, and the analytics event to fire before getting a response. All of that is background work. It goes into a queue. Workers pick it up asynchronously. The user gets a near-instant response, and all the heavy lifting happens behind the scenes.
 
@@ -33,7 +33,7 @@ This is the architecture behind Shopify's order pipeline, GitHub's notification 
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
                       ┌──────────────────────────┐
@@ -73,29 +73,29 @@ This is the architecture behind Shopify's order pipeline, GitHub's notification 
 Redis is an in-memory data store — reads and writes happen in microseconds. BullMQ stores all job data in Redis sorted sets and lists, meaning jobs persist even if a worker service crashes and restarts. No job is ever lost silently.
 
 **Why BullMQ over a raw Redis queue?**
-A raw Redis list has no concept of retries, priorities, delayed execution, or dead-letter queues. You would need to build all of that from scratch, and do it correctly. BullMQ is a battle-tested library that handles all of it with a clean API, backed by years of production use.
+A raw Redis list has no concept of retries, priorities, delayed execution, or dead-letter queues. You would need to build all of that from scratch, and do it correctly. BullMQ is a library that handles all of it with a clean API, backed by years of production use.
 
 **Why three microservices instead of one app?**
 Fault isolation. If `mail-server` crashes because of a bad email template or a third-party API outage, `order-server` keeps processing orders completely unaffected. One service's failure does not cascade into the others.
 
 ---
 
-## ✨ Features
+##  Features
 
 | Feature | Description |
 |---|---|
-| 🔴 Priority-based scheduling | Assign priority levels to jobs — critical tasks are processed before low-priority ones |
-| 🔴 Delayed job execution | Schedule a job to run at a specific point in the future |
-| 🔴 Exponential backoff retry | Failed jobs are automatically retried with increasing delays between attempts |
-| 🔴 Dead-letter queue | Jobs that exhaust all retries are moved to a dead-letter queue for inspection |
-| 🔴 Concurrent workers | Multiple jobs are processed in parallel using worker threads |
-| 🔴 Horizontal scalability | Add more worker instances without changing any application code |
-| 🔴 Service fault isolation | Each microservice fails independently — no cascading system failures |
-| 🔴 Job persistence | All job state lives in Redis — workers can restart without data loss |
+|  Priority-based scheduling | Assign priority levels to jobs — critical tasks are processed before low-priority ones |
+|  Delayed job execution | Schedule a job to run at a specific point in the future |
+|  Exponential backoff retry | Failed jobs are automatically retried with increasing delays between attempts |
+|  Dead-letter queue | Jobs that exhaust all retries are moved to a dead-letter queue for inspection |
+|  Concurrent workers | Multiple jobs are processed in parallel using worker threads |
+|  Horizontal scalability | Add more worker instances without changing any application code |
+|  Service fault isolation | Each microservice fails independently — no cascading system failures |
+|  Job persistence | All job state lives in Redis — workers can restart without data loss |
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 | Layer | Technology | Why This Choice |
 |---|---|---|
@@ -107,7 +107,7 @@ Fault isolation. If `mail-server` crashes because of a bad email template or a t
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 NexQueue/
@@ -133,7 +133,7 @@ NexQueue/
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -173,7 +173,7 @@ cp mail-server/.env.example mail-server/.env
 
 ---
 
-## ▶️ Running the Project
+##  Running the Project
 
 Open three separate terminal windows and start each service:
 
@@ -200,7 +200,7 @@ The `user-service` returns a response immediately. Watch the other two terminals
 
 ---
 
-## 📚 What I Learned Building This
+##  What I Learned Building This
 
 **Async task decoupling**
 The core insight is that the HTTP response and the actual work are two separate things. The user cares that their order was accepted — not that the confirmation email was sent. Decoupling these with a queue makes the system faster for users and more resilient to downstream failures.
@@ -212,11 +212,11 @@ BullMQ stores delayed jobs in a sorted set (sorted by execution time), active jo
 Three services communicating through a shared broker forces you to think about every failure scenario: what if a worker crashes mid-job? Does the job get processed twice? Does it get lost? BullMQ's acknowledgement model answers each of these correctly, and understanding why required reading through its internals.
 
 **Microservice tradeoffs**
-Three `package.json` files, three processes, three ports — the operational overhead of microservices is real. The isolation benefit only pays off when services have genuinely different failure profiles or scaling requirements. This project made that tradeoff concrete and tangible.
+ `package.json` files,  processes, ports — the operational overhead of microservices is real. The isolation benefit only pays off when services have genuinely different failure profiles or scaling requirements. This project made that tradeoff concrete and tangible.
 
 ---
 
-## 🗺️ Roadmap
+##  Roadmap
 
 - [ ] Live monitoring dashboard using Bull Board UI
 - [ ] Real email dispatch via Nodemailer
