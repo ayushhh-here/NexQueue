@@ -21,7 +21,7 @@ Most backend tutorials stop at REST APIs and CRUD operations.
 
 When a user places an order on an e-commerce platform, they should not wait for the confirmation email to send, the inventory to update, and the analytics event to fire before getting a response. All of that is background work. It goes into a queue. Workers pick it up asynchronously. The user gets a near-instant response, and all the heavy lifting happens behind the scenes.
 
-NexQueue is my ground-up implementation of this exact pattern — a fully working distributed job queue built with Node.js, Redis, and BullMQ. Independent microservices communicate through a shared in-memory queue broker, with priority-based scheduling, exponential backoff retries, dead-letter queues for failed jobs, and complete fault isolation between services.
+NexQueue is my ground-up implementation of this exact pattern - a fully working distributed job queue built with Node.js, Redis, and BullMQ. Independent microservices communicate through a shared in-memory queue broker, with priority-based scheduling, exponential backoff retries, dead-letter queues for failed jobs, and complete fault isolation between services.
 
 This is the architecture behind Shopify's order pipeline, GitHub's notification system, and Stripe's payment processing at scale.
 
@@ -64,13 +64,13 @@ This is the architecture behind Shopify's order pipeline, GitHub's notification 
 | `mail-server` | 5002 | Subscribes to the mail queue, dispatches notification emails |
 
 **Why Redis as the broker?**
-Redis is an in-memory data store — reads and writes happen in microseconds. BullMQ stores all job data in Redis sorted sets and lists, meaning jobs persist even if a worker service crashes and restarts. No job is ever lost silently.
+Redis is an in-memory data store - reads and writes happen in microseconds. BullMQ stores all job data in Redis sorted sets and lists, meaning jobs persist even if a worker service crashes and restarts. No job is ever lost silently.
 
 **Why BullMQ over a raw Redis queue?**
 A raw Redis list has no concept of retries, priorities, delayed execution, or dead-letter queues. You would need to build all of that from scratch, and do it correctly. BullMQ is a library that handles all of it with a clean API, backed by years of production use.
 
 **Why three microservices instead of one app?**
-Fault isolation. If `mail-server` crashes because of a bad email template or a third-party API outage, `order-server` keeps processing orders completely unaffected. One service's failure does not cascade into the others.
+Fault isolation. If `mail-server` crashes because of a bad email template or a third-party API outage, `order-server` keeps processing orders completely unaffected. One service's failure does not cascade into the others which is just perfect.
 
 ---
 
@@ -78,14 +78,14 @@ Fault isolation. If `mail-server` crashes because of a bad email template or a t
 
 | Feature | Description |
 |---|---|
-|  Priority-based scheduling | Assign priority levels to jobs — critical tasks are processed before low-priority ones |
+|  Priority-based scheduling | Assign priority levels to jobs - critical tasks are processed before low-priority ones |
 |  Delayed job execution | Schedule a job to run at a specific point in the future |
 |  Exponential backoff retry | Failed jobs are automatically retried with increasing delays between attempts |
 |  Dead-letter queue | Jobs that exhaust all retries are moved to a dead-letter queue for inspection |
 |  Concurrent workers | Multiple jobs are processed in parallel using worker threads |
 |  Horizontal scalability | Add more worker instances without changing any application code |
-|  Service fault isolation | Each microservice fails independently — no cascading system failures |
-|  Job persistence | All job state lives in Redis — workers can restart without data loss |
+|  Service fault isolation | Each microservice fails independently - no cascading system failures |
+|  Job persistence | All job state lives in Redis - workers can restart without data loss |
 
 ---
 
@@ -95,7 +95,7 @@ Fault isolation. If `mail-server` crashes because of a bad email template or a t
 |---|---|---|
 | Runtime | Node.js 18+ | Non-blocking I/O is a natural fit for queue workers that spend time waiting |
 | Framework | Express.js | Minimal HTTP layer for the producer service — no unnecessary overhead |
-| Queue library | BullMQ | Production-grade queue abstraction — retries, priorities, delays, dead-letter all built in |
+| Queue library | BullMQ | Production-grade queue abstraction - retries, priorities, delays, dead-letter all built in |
 | Broker | Redis 7+ | In-memory speed with list/sorted-set data structures that map perfectly to queue semantics |
 | Containerization | Docker | One command to spin up Redis locally, reproducible across any machine |
 
@@ -106,17 +106,17 @@ Fault isolation. If `mail-server` crashes because of a bad email template or a t
 ```
 NexQueue/
 │
-├── user-service/               # HTTP producer — accepts requests, enqueues jobs
+├── user-service/               # HTTP producer - accepts requests, enqueues jobs
 │   ├── app.js                  # Express server + BullMQ Queue producer
 │   ├── package.json
 │   └── .env.example
 │
-├── order-server/               # Order worker — consumes and processes order jobs
+├── order-server/               # Order worker - consumes and processes order jobs
 │   ├── app.js                  # BullMQ Worker + order processing logic
 │   ├── package.json
 │   └── .env.example
 │
-├── mail-server/                # Mail worker — consumes and processes email jobs
+├── mail-server/                # Mail worker - consumes and processes email jobs
 │   ├── app.js                  # BullMQ Worker + email dispatch logic
 │   ├── package.json
 │   └── .env.example
@@ -197,16 +197,16 @@ The `user-service` returns a response immediately. Watch the other two terminals
 ##  What I Learned Building This
 
 **Async task decoupling**
-The core insight is that the HTTP response and the actual work are two separate things. The user cares that their order was accepted — not that the confirmation email was sent. Decoupling these with a queue makes the system faster for users and more resilient to downstream failures.
+ core insight is that the HTTP response and the actual work are two separate things. The user cares that their order was accepted - not that the confirmation email was sent. decoupling these with a queue makes the system faster for users and more resilient to downstream failures.
 
 **Redis data structures under the hood**
-BullMQ stores delayed jobs in a sorted set (sorted by execution time), active jobs in a list, and failed jobs in a separate dead-letter set. Understanding this made Redis's data structures genuinely click — I now think of Redis as a toolkit, not just a cache.
+BullMQ stores delayed jobs in a sorted set (sorted by execution time), active jobs in a list, and failed jobs in a separate dead-letter set. Understanding this made Redis's data structures genuinely click - I just think of Redis now as a toolkit, not just a cache.
 
 **Distributed failure modes**
 Three services communicating through a shared broker forces you to think about every failure scenario: what if a worker crashes mid-job? Does the job get processed twice? Does it get lost? BullMQ's acknowledgement model answers each of these correctly, and understanding why required reading through its internals.
 
 **Microservice tradeoffs**
- `package.json` files,  processes, ports — the operational overhead of microservices is real. The isolation benefit only pays off when services have genuinely different failure profiles or scaling requirements. This project made that tradeoff concrete and tangible.
+ `package.json` files,  processes, ports - the operational overhead of microservices is real. The isolation benefit only pays off when services have genuinely different failure profiles or scaling requirements. This project made that tradeoff tangible for sure.
 
 ---
 
