@@ -44,7 +44,8 @@ const userDb = [
 const orderQueue = new Queue("order-queue", { connection });
 
 app.post("/order", async (req, res) => {
-  const { userId, productName, price } = req.body || {};
+  const { userId, productName, price, idempotencyKey: bodyIdempotencyKey } = req.body || {};
+  const idempotencyKey = req.headers["idempotency-key"] || bodyIdempotencyKey;
 
   if (
     !userId ||
@@ -59,13 +60,34 @@ app.post("/order", async (req, res) => {
   }
 
   try {
-    const orderId = `order_${Date.now()}`;
-    const job = await orderQueue.add("Process Order", {
-      orderId,
-      userId,
-      productName,
-      price,
-    });
+    // Idempotency check: prevent duplicate job creation if key was already submitted
+    if (idempotencyKey) {
+      const existingJob = await orderQueue.getJob(idempotencyKey);
+      if (existingJob) {
+        const state = await existingJob.getState();
+        return res.status(409).json({
+          message: "Duplicate order: an order with this idempotency key already exists",
+          orderId: existingJob.data?.orderId,
+          jobId: existingJob.id,
+          state,
+        });
+      }
+    }
+
+    const orderId = idempotencyKey ? `order_${idempotencyKey}` : `order_${Date.now()}`;
+    const jobOptions = idempotencyKey ? { jobId: idempotencyKey } : {};
+
+    const job = await orderQueue.add(
+      "Process Order",
+      {
+        orderId,
+        userId,
+        productName,
+        price,
+        ...(idempotencyKey ? { idempotencyKey } : {}),
+      },
+      jobOptions
+    );
 
     return res.status(202).json({
       message: "Order accepted, processing in background",

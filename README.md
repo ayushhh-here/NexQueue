@@ -83,6 +83,7 @@ Fault isolation. If `mail-server` crashes because of a bad email template or a t
 | Service fault isolation | Each microservice fails independently - no cascading system failures |
 | Job persistence | Job state lives in Redis - workers can restart without losing queued/in-flight jobs |
 | Queue-based request/reply | `order-server` calls into `user-service`'s verification worker over a queue (`job.waitUntilFinished`) instead of a direct HTTP call, so the two stay fully decoupled |
+| Idempotency & deduplication | Prevent double ordering on network retries or duplicate clicks via `Idempotency-Key` header or `idempotencyKey` body |
 | Graceful shutdown | Each service closes its BullMQ workers/queues cleanly on `SIGINT`/`SIGTERM` |
 
 ---
@@ -200,6 +201,17 @@ curl http://localhost:5001/order/job/<jobId>
 ```
 
 To see the rejection path, send a `userId` that isn't in the mock user DB (anything other than `"user_123"`) — `order-server` will log the order as rejected and no mail job will be created.
+
+To test duplicate order prevention, pass an `Idempotency-Key` header:
+
+```bash
+curl -X POST http://localhost:5001/order \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: demo-key-101" \
+  -d '{"userId": "user_123", "productName": "mechanical keyboard", "price": 4999}'
+```
+
+Re-running the exact request with the same `Idempotency-Key` immediately returns `409 Conflict`, ensuring the background worker never processes duplicate orders.
 
 ---
 
