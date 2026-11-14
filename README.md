@@ -191,7 +191,13 @@ curl -X POST http://localhost:5001/order \
   -d '{"userId": "user_123", "productName": "mechanical keyboard", "price": 4999}'
 ```
 
-`user-service` responds immediately with `202 Accepted` and an `orderId`. Watch the other two terminals — `order-server` picks up the order, verifies the user, and `mail-server` picks up the resulting mail job — all asynchronously.
+`user-service` responds immediately with `202 Accepted`, an `orderId`, and a `jobId`. Watch the other two terminals — `order-server` picks up the order, verifies the user, and `mail-server` picks up the resulting mail job — all asynchronously.
+
+Check the background processing status using the returned `jobId`:
+
+```bash
+curl http://localhost:5001/order/job/<jobId>
+```
 
 To see the rejection path, send a `userId` that isn't in the mock user DB (anything other than `"user_123"`) — `order-server` will log the order as rejected and no mail job will be created.
 

@@ -78,6 +78,31 @@ app.post("/order", async (req, res) => {
   }
 });
 
+app.get("/order/job/:jobId", async (req, res) => {
+  const { jobId } = req.params;
+
+  try {
+    const job = await orderQueue.getJob(jobId);
+
+    if (!job) {
+      return res.status(404).json({ message: `Job ${jobId} not found` });
+    }
+
+    const state = await job.getState();
+
+    return res.json({
+      jobId: job.id,
+      state,
+      data: job.data,
+      result: job.returnvalue || null,
+      failedReason: job.failedReason || null,
+    });
+  } catch (error) {
+    console.error(`Failed to fetch status for job ${jobId}:`, error);
+    return res.status(500).json({ message: "Could not retrieve job status" });
+  }
+});
+
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
 // ---------------------------------------------------------------------------
