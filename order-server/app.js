@@ -1,10 +1,18 @@
 require("dotenv").config({ quiet: true });
 const { Queue, QueueEvents, Worker } = require("bullmq");
 
-const connection = {
-  host: process.env.REDIS_HOST || "127.0.0.1",
-  port: Number(process.env.REDIS_PORT) || 6379,
-};
+const connection = process.env.REDIS_URL
+  ? {
+      url: process.env.REDIS_URL,
+      ...(process.env.REDIS_PASSWORD ? { password: process.env.REDIS_PASSWORD } : {}),
+      maxRetriesPerRequest: null,
+    }
+  : {
+      host: process.env.REDIS_HOST || "127.0.0.1",
+      port: Number(process.env.REDIS_PORT) || 6379,
+      ...(process.env.REDIS_PASSWORD ? { password: process.env.REDIS_PASSWORD } : {}),
+      maxRetriesPerRequest: null,
+    };
 
 const VERIFY_TIMEOUT_MS = Number(process.env.VERIFY_TIMEOUT_MS) || 10_000;
 
