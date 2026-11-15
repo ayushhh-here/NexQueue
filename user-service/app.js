@@ -138,6 +138,38 @@ app.get("/order/job/:jobId", async (req, res) => {
   }
 });
 
+app.delete("/order/job/:jobId", async (req, res) => {
+  const { jobId } = req.params;
+
+  try {
+    const job = await orderQueue.getJob(jobId);
+
+    if (!job) {
+      return res.status(404).json({ message: `Job ${jobId} not found` });
+    }
+
+    const state = await job.getState();
+
+    // Only waiting or delayed jobs can be cleanly removed before processing begins
+    if (state !== "waiting" && state !== "delayed") {
+      return res.status(400).json({
+        message: `Cannot cancel order: job is already in '${state}' state`,
+      });
+    }
+
+    await job.remove();
+
+    return res.json({
+      message: "Order cancelled successfully",
+      jobId,
+      orderId: job.data?.orderId,
+    });
+  } catch (error) {
+    console.error(`Failed to cancel job ${jobId}:`, error);
+    return res.status(500).json({ message: "Could not cancel order" });
+  }
+});
+
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
 // ---------------------------------------------------------------------------

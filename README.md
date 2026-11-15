@@ -85,6 +85,7 @@ Fault isolation. If `mail-server` crashes because of a bad email template or a t
 | Queue-based request/reply | `order-server` calls into `user-service`'s verification worker over a queue (`job.waitUntilFinished`) instead of a direct HTTP call, so the two stay fully decoupled |
 | Idempotency & deduplication | Prevent double ordering on network retries or duplicate clicks via `Idempotency-Key` header or `idempotencyKey` body |
 | Automatic retries & backoff | Configured 3 retry attempts with exponential backoff on all queues to survive transient downstream failures |
+| Order cancellation | Cancel pending or waiting jobs before workers start execution via `DELETE /order/job/:jobId` |
 | Graceful shutdown | Each service closes its BullMQ workers/queues cleanly on `SIGINT`/`SIGTERM` |
 
 ---
@@ -213,6 +214,12 @@ curl -X POST http://localhost:5001/order \
 ```
 
 Re-running the exact request with the same `Idempotency-Key` immediately returns `409 Conflict`, ensuring the background worker never processes duplicate orders.
+
+Cancel a pending order before workers begin processing it:
+
+```bash
+curl -X DELETE http://localhost:5001/order/job/<jobId>
+```
 
 ---
 
