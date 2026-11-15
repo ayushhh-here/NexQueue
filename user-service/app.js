@@ -34,6 +34,16 @@ const userDb = [
   },
 ];
 
+const DEFAULT_JOB_OPTIONS = {
+  attempts: 3,
+  backoff: {
+    type: "exponential",
+    delay: 1000,
+  },
+  removeOnComplete: { count: 100 },
+  removeOnFail: { count: 500 },
+};
+
 // ---------------------------------------------------------------------------
 // Producer: this is the public HTTP entrypoint of the system. It validates
 // the incoming request, then hands the work off to order-server by placing
@@ -75,7 +85,10 @@ app.post("/order", async (req, res) => {
     }
 
     const orderId = idempotencyKey ? `order_${idempotencyKey}` : `order_${Date.now()}`;
-    const jobOptions = idempotencyKey ? { jobId: idempotencyKey } : {};
+    const jobOptions = {
+      ...DEFAULT_JOB_OPTIONS,
+      ...(idempotencyKey ? { jobId: idempotencyKey } : {}),
+    };
 
     const job = await orderQueue.add(
       "Process Order",
@@ -152,7 +165,9 @@ const verificationWorker = new Worker(
 );
 
 verificationWorker.on("failed", (job, err) => {
-  console.error(`[verification] job ${job?.id} failed:`, err.message);
+  const attempts = job?.attemptsMade || 1;
+  const maxAttempts = job?.opts?.attempts || 1;
+  console.error(`[verification] job ${job?.id} failed (attempt ${attempts}/${maxAttempts}):`, err.message);
 });
 
 const server = app.listen(PORT, () =>

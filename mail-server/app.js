@@ -45,7 +45,9 @@ mailWorker.on("completed", (job) => {
 });
 
 mailWorker.on("failed", (job, err) => {
-  console.error(`[mail] job ${job?.id} failed:`, err.message);
+  const attempts = job?.attemptsMade || 1;
+  const maxAttempts = job?.opts?.attempts || 1;
+  console.error(`[mail] job ${job?.id} failed (attempt ${attempts}/${maxAttempts}):`, err.message);
 });
 
 console.log("Mail server (mail-queue worker) started");

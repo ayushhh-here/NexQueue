@@ -68,7 +68,7 @@ Redis is an in-memory data store—reads and writes happen in microseconds. Bull
 **Why BullMQ over a raw Redis queue?**
 A raw Redis list has no concept of retries, delayed execution, or worker coordination. You would need to build these capabilities yourself. BullMQ provides them through a clean API while handling the underlying Redis data structures, making reliable background job processing significantly easier.
 
-> **Note:** this project does not currently configure retries/backoff on job creation (no `attempts`/`backoff` options are set), so jobs are attempted once by default. BullMQ supports this out of the box — it's on the roadmap below to actually wire it up.
+> **Reliability Note (SOLVED):** In initial versions, jobs had no retry policy. All queues are now configured with 3 automatic attempts and exponential backoff (`delay: 1000ms`, doubling on each attempt) to survive transient network or downstream microservice hiccups without dropping jobs.
 
 **Why three microservices instead of one app?**
 Fault isolation. If `mail-server` crashes because of a bad email template or a third-party API outage, `order-server` keeps processing orders completely unaffected. One service's failure does not cascade into the others which is just perfect.
@@ -84,6 +84,7 @@ Fault isolation. If `mail-server` crashes because of a bad email template or a t
 | Job persistence | Job state lives in Redis - workers can restart without losing queued/in-flight jobs |
 | Queue-based request/reply | `order-server` calls into `user-service`'s verification worker over a queue (`job.waitUntilFinished`) instead of a direct HTTP call, so the two stay fully decoupled |
 | Idempotency & deduplication | Prevent double ordering on network retries or duplicate clicks via `Idempotency-Key` header or `idempotencyKey` body |
+| Automatic retries & backoff | Configured 3 retry attempts with exponential backoff on all queues to survive transient downstream failures |
 | Graceful shutdown | Each service closes its BullMQ workers/queues cleanly on `SIGINT`/`SIGTERM` |
 
 ---
@@ -238,7 +239,7 @@ Multiple `package.json` files, processes, and ports—the operational overhead o
 
 Being upfront about what this project doesn't do (yet), rather than overstating it:
 
-- No retries/backoff configured on jobs — a single failure means the job is not automatically retried.
+- ~~No retries/backoff configured on jobs~~ **[SOLVED]**: Jobs now configure 3 attempts with exponential backoff (`delay: 1000ms`, `type: 'exponential'`) and automated Redis cleanup (`removeOnComplete: 100`, `removeOnFail: 500`), addressing the earlier single-attempt limitation.
 - Order data is stored in an in-memory array in `order-server`, not a real database — restarting the process loses all order history.
 - The mock user "database" in `user-service` is a hardcoded array with a plaintext password field, purely for demoing the verification flow — it is not a real auth system.
 - No monitoring/dashboard for queue state (Bull Board is on the roadmap).
@@ -250,7 +251,7 @@ Being upfront about what this project doesn't do (yet), rather than overstating 
 
 - [ ] Live monitoring dashboard using Bull Board UI
 - [ ] Real email dispatch via Nodemailer
-- [ ] Configure retries/backoff on job creation
+- [x] Configure retries/backoff on job creation (3 attempts + exponential backoff wired across all queues)
 - [ ] Persist orders to a real database (Postgres/Mongo)
 - [ ] Kubernetes deployment with horizontal pod autoscaling
 - [ ] Prometheus metrics + Grafana dashboards

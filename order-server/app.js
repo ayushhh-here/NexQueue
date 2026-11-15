@@ -25,6 +25,16 @@ const verifyUserQueue = new Queue("user-verification-queue", { connection });
 const verificationQueueEvents = new QueueEvents("user-verification-queue", { connection });
 const mailQueue = new Queue("mail-queue", { connection });
 
+const DEFAULT_JOB_OPTIONS = {
+  attempts: 3,
+  backoff: {
+    type: "exponential",
+    delay: 1000,
+  },
+  removeOnComplete: { count: 100 },
+  removeOnFail: { count: 500 },
+};
+
 // In-memory "orders table" standing in for a real database. Swap this out
 // for Postgres/Mongo/etc. in a real deployment — see README roadmap.
 const orders = [];
@@ -40,7 +50,7 @@ const orders = [];
  * memory leak across requests. This avoids that entirely.
  */
 async function verifyUser(userId) {
-  const job = await verifyUserQueue.add("Verify User", { userId });
+  const job = await verifyUserQueue.add("Verify User", { userId }, DEFAULT_JOB_OPTIONS);
   const result = await job.waitUntilFinished(verificationQueueEvents, VERIFY_TIMEOUT_MS);
   return result; // { isValidUser, user }
 }
@@ -61,12 +71,16 @@ const orderWorker = new Worker(
     // "Save" the order. Replace with a real DB write in production.
     orders.push({ orderId, userId, productName, price, status: "confirmed" });
 
-    const mailJob = await mailQueue.add("Send Mail", {
-      from: "noreply@nexqueue.dev",
-      to: user.email,
-      subject: "Thank you for shopping",
-      body: `Your order for "${productName}" was placed successfully.`,
-    });
+    const mailJob = await mailQueue.add(
+      "Send Mail",
+      {
+        from: "noreply@nexqueue.dev",
+        to: user.email,
+        subject: "Thank you for shopping",
+        body: `Your order for "${productName}" was placed successfully.`,
+      },
+      DEFAULT_JOB_OPTIONS
+    );
 
     console.log(`[order] ${orderId} confirmed, mail job ${mailJob.id} queued`);
     return { orderId, status: "confirmed", mailJobId: mailJob.id };
@@ -75,7 +89,9 @@ const orderWorker = new Worker(
 );
 
 orderWorker.on("failed", (job, err) => {
-  console.error(`[order] job ${job?.id} failed:`, err.message);
+  const attempts = job?.attemptsMade || 1;
+  const maxAttempts = job?.opts?.attempts || 1;
+  console.error(`[order] job ${job?.id} failed (attempt ${attempts}/${maxAttempts}):`, err.message);
 });
 
 console.log("Order server (order-queue worker) started");
