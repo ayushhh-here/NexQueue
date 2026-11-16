@@ -71,13 +71,26 @@ const orderWorker = new Worker(
     // "Save" the order. Replace with a real DB write in production.
     orders.push({ orderId, userId, productName, price, status: "confirmed" });
 
+    const emailBody = [
+      `Hi ${user.name || "Customer"},`,
+      "",
+      "Thank you for shopping with us! Here are your order details:",
+      "----------------------------------------",
+      `Order ID : ${orderId}`,
+      `Item     : ${productName}`,
+      `Total    : ₹${price}`,
+      `Status   : Confirmed`,
+      "----------------------------------------",
+      "Your package is being prepared for shipment.",
+    ].join("\n");
+
     const mailJob = await mailQueue.add(
       "Send Mail",
       {
         from: "noreply@nexqueue.dev",
         to: user.email,
-        subject: "Thank you for shopping",
-        body: `Your order for "${productName}" was placed successfully.`,
+        subject: `Order Confirmation - ${orderId}`,
+        body: emailBody,
       },
       DEFAULT_JOB_OPTIONS
     );
