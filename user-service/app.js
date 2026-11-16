@@ -170,6 +170,26 @@ app.delete("/order/job/:jobId", async (req, res) => {
   }
 });
 
+app.get("/stats", async (_req, res) => {
+  try {
+    const counts = await orderQueue.getJobCounts();
+
+    return res.json({
+      queue: "order-queue",
+      waiting: counts.waiting || 0,
+      active: counts.active || 0,
+      completed: counts.completed || 0,
+      failed: counts.failed || 0,
+      delayed: counts.delayed || 0,
+      paused: counts.paused || 0,
+      uptimeSeconds: Math.floor(process.uptime()),
+    });
+  } catch (error) {
+    console.error("Failed to fetch queue stats:", error);
+    return res.status(500).json({ message: "Could not retrieve queue stats" });
+  }
+});
+
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
 // ---------------------------------------------------------------------------

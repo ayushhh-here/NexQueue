@@ -86,6 +86,7 @@ Fault isolation. If `mail-server` crashes because of a bad email template or a t
 | Idempotency & deduplication | Prevent double ordering on network retries or duplicate clicks via `Idempotency-Key` header or `idempotencyKey` body |
 | Automatic retries & backoff | Configured 3 retry attempts with exponential backoff on all queues to survive transient downstream failures |
 | Order cancellation | Cancel pending or waiting jobs before workers start execution via `DELETE /order/job/:jobId` |
+| Live queue stats | Inspect real-time counts of waiting, active, completed, and failed jobs via `GET /stats` |
 | Graceful shutdown | Each service closes its BullMQ workers/queues cleanly on `SIGINT`/`SIGTERM` |
 
 ---
@@ -219,6 +220,12 @@ Cancel a pending order before workers begin processing it:
 
 ```bash
 curl -X DELETE http://localhost:5001/order/job/<jobId>
+```
+
+Inspect real-time queue metrics and job counts:
+
+```bash
+curl http://localhost:5001/stats
 ```
 
 ---
