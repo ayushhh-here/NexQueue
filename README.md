@@ -87,6 +87,7 @@ Fault isolation. If `mail-server` crashes because of a bad email template or a t
 | Automatic retries & backoff | Configured 3 retry attempts with exponential backoff on all queues to survive transient downstream failures |
 | Order cancellation | Cancel pending or waiting jobs before workers start execution via `DELETE /order/job/:jobId` |
 | Live queue stats | Inspect real-time counts of waiting, active, completed, and failed jobs via `GET /stats` |
+| Deep health check | Live Redis ping and uptime probe via `GET /health` for container and load-balancer readiness |
 | Graceful shutdown | Each service closes its BullMQ workers/queues cleanly on `SIGINT`/`SIGTERM` |
 
 ---
@@ -226,6 +227,12 @@ Inspect real-time queue metrics and job counts:
 
 ```bash
 curl http://localhost:5001/stats
+```
+
+Check service and Redis readiness health:
+
+```bash
+curl http://localhost:5001/health
 ```
 
 ---

@@ -190,7 +190,24 @@ app.get("/stats", async (_req, res) => {
   }
 });
 
-app.get("/health", (_req, res) => res.json({ status: "ok" }));
+app.get("/health", async (_req, res) => {
+  try {
+    const client = await orderQueue.client;
+    await client.ping();
+
+    return res.json({
+      status: "healthy",
+      redis: "connected",
+      uptimeSeconds: Math.floor(process.uptime()),
+    });
+  } catch (error) {
+    return res.status(503).json({
+      status: "unhealthy",
+      redis: "disconnected",
+      error: error.message,
+    });
+  }
+});
 
 // ---------------------------------------------------------------------------
 // Consumer: user-service also runs the worker that answers "is this user
