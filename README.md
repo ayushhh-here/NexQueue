@@ -88,6 +88,7 @@ Fault isolation. If `mail-server` crashes because of a bad email template or a t
 | Order cancellation | Cancel pending or waiting jobs before workers start execution via `DELETE /order/job/:jobId` |
 | Live queue stats | Inspect real-time counts of waiting, active, completed, and failed jobs via `GET /stats` |
 | Deep health check | Live Redis ping and uptime probe via `GET /health` for container and load-balancer readiness |
+| Input validation | Strict field-by-field validation with descriptive error messages for `POST /order` |
 | Graceful shutdown | Each service closes its BullMQ workers/queues cleanly on `SIGINT`/`SIGTERM` |
 
 ---

@@ -57,17 +57,20 @@ app.post("/order", async (req, res) => {
   const { userId, productName, price, idempotencyKey: bodyIdempotencyKey } = req.body || {};
   const idempotencyKey = req.headers["idempotency-key"] || bodyIdempotencyKey;
 
-  if (
-    !userId ||
-    !productName ||
-    typeof price !== "number" ||
-    Number.isNaN(price) ||
-    price < 0
-  ) {
-    return res.status(400).json({
-      message: "userId, productName and a non-negative numeric price are required",
-    });
+  if (!userId || typeof userId !== "string" || !userId.trim()) {
+    return res.status(400).json({ error: "userId is required and must be a non-empty string" });
   }
+
+  if (!productName || typeof productName !== "string" || !productName.trim()) {
+    return res.status(400).json({ error: "productName is required and cannot be empty" });
+  }
+
+  if (typeof price !== "number" || Number.isNaN(price) || price <= 0) {
+    return res.status(400).json({ error: "price must be a positive number greater than 0" });
+  }
+
+  const cleanUserId = userId.trim();
+  const cleanProductName = productName.trim();
 
   try {
     // Idempotency check: prevent duplicate job creation if key was already submitted
@@ -94,8 +97,8 @@ app.post("/order", async (req, res) => {
       "Process Order",
       {
         orderId,
-        userId,
-        productName,
+        userId: cleanUserId,
+        productName: cleanProductName,
         price,
         ...(idempotencyKey ? { idempotencyKey } : {}),
       },
