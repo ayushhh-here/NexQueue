@@ -279,7 +279,7 @@ Being upfront about what this project doesn't do (yet), rather than overstating 
 ## Roadmap
 
 - [ ] Live monitoring dashboard using Bull Board UI
-- [ ] Real email dispatch via Nodemailer
+- [x] Real email dispatch via Nodemailer (integrated with Ethereal test inbox and preview URLs)
 - [x] Configure retries/backoff on job creation (3 attempts + exponential backoff wired across all queues)
 - [ ] Persist orders to a real database (Postgres/Mongo)
 - [ ] Kubernetes deployment with horizontal pod autoscaling

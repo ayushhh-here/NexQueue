@@ -1,5 +1,6 @@
 require("dotenv").config({ quiet: true });
 const { Worker } = require("bullmq");
+const nodemailer = require("nodemailer");
 
 const connection = process.env.REDIS_URL
   ? {
@@ -14,20 +15,63 @@ const connection = process.env.REDIS_URL
       maxRetriesPerRequest: null,
     };
 
+let transporterPromise = null;
+
+async function getTransporter() {
+  if (!transporterPromise) {
+    transporterPromise = (async () => {
+      if (process.env.SMTP_HOST && process.env.SMTP_PORT) {
+        return nodemailer.createTransport({
+          host: process.env.SMTP_HOST,
+          port: Number(process.env.SMTP_PORT),
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+          },
+        });
+      }
+
+      // Generate a test Ethereal inbox on the fly for development
+      const testAccount = await nodemailer.createTestAccount();
+      console.log(`[mail] Created Ethereal test inbox: ${testAccount.user}`);
+      return nodemailer.createTransport({
+        host: "smtp.ethereal.email",
+        port: 587,
+        secure: false,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass,
+        },
+      });
+    })();
+  }
+  return transporterPromise;
+}
+
 /**
- * Stand-in for a real email provider (Nodemailer/SES/etc — see README
- * roadmap). Throwing here marks the BullMQ job as failed, which is the
- * correct way to signal an error to the worker.
+ * Dispatches emails using Nodemailer with automatic Ethereal test account fallback.
+ * Generates and logs a clickable preview URL for local inspection.
  */
 async function sendMail(from, to, subject, body) {
   if (!to) {
     throw new Error("Cannot send mail: recipient address missing");
   }
   console.log(`[mail] sending "${subject}" to ${to}`);
-  console.log(`[mail]   from: ${from}`);
-  console.log(`[mail]   body: ${body}`);
-  // Simulated send — replace with a real transport in production.
-  return { sent: true, to };
+
+  const transporter = await getTransporter();
+  const info = await transporter.sendMail({
+    from: from || "noreply@nexqueue.dev",
+    to,
+    subject,
+    text: body,
+  });
+
+  const previewUrl = nodemailer.getTestMessageUrl(info);
+  if (previewUrl) {
+    console.log(`[mail] Preview URL: ${previewUrl}`);
+  }
+
+  return { sent: true, to, messageId: info.messageId, previewUrl: previewUrl || null };
 }
 
 const mailWorker = new Worker(

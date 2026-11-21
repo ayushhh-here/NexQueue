@@ -17,7 +17,8 @@
   },
   "dependencies": {
     "bullmq": "^5.77.0",
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "nodemailer": "^10.6.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
