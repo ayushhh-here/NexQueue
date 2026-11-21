@@ -141,6 +141,39 @@ app.get("/order/job/:jobId", async (req, res) => {
   }
 });
 
+app.get("/orders", async (req, res) => {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 20, 100);
+    const jobs = await orderQueue.getJobs(
+      ["completed", "active", "waiting", "delayed", "failed"],
+      0,
+      limit - 1
+    );
+
+    const orders = await Promise.all(
+      jobs.map(async (job) => {
+        const state = await job.getState();
+        return {
+          jobId: job.id,
+          orderId: job.data?.orderId,
+          userId: job.data?.userId,
+          productName: job.data?.productName,
+          price: job.data?.price,
+          state,
+          timestamp: job.timestamp,
+          result: job.returnvalue || null,
+          failedReason: job.failedReason || null,
+        };
+      })
+    );
+
+    return res.json({ count: orders.length, orders });
+  } catch (error) {
+    console.error("Failed to fetch recent orders:", error);
+    return res.status(500).json({ message: "Could not retrieve recent orders" });
+  }
+});
+
 app.delete("/order/job/:jobId", async (req, res) => {
   const { jobId } = req.params;
 
