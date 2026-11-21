@@ -1,0 +1,14 @@
+{
+  "name": "nexqueue-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Distributed job queue workspace with BullMQ and Redis",
+  "scripts": {
+    "install:all": "npm install --prefix user-service && npm install --prefix order-server && npm install --prefix mail-server",
+    "dev": "concurrently -n \"user,order,mail\" -c \"cyan,green,yellow\" \"npm run dev --prefix user-service\" \"npm run dev --prefix order-server\" \"npm run dev --prefix mail-server\"",
+    "start": "concurrently -n \"user,order,mail\" -c \"cyan,green,magenta\" \"npm run start --prefix user-service\" \"npm run start --prefix order-server\" \"npm run start --prefix mail-server\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

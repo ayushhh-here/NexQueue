@@ -177,7 +177,13 @@ The defaults (`127.0.0.1:6379`) work out of the box with the Redis container fro
 
 ## Running the Project
 
-Open three separate terminal windows and start each service:
+You can run all three services concurrently in a single terminal from the repository root:
+
+```bash
+npm run dev
+```
+
+Alternatively, open three separate terminal windows and start each service individually:
 
 ```bash
 # Terminal 1 — HTTP entrypoint + verification worker
