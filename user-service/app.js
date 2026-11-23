@@ -233,6 +233,33 @@ app.get("/stats", async (_req, res) => {
   }
 });
 
+app.post("/queue/clean", async (req, res) => {
+  const { grace = 0, limit = 1000 } = req.body || {};
+
+  try {
+    const cleanedCompleted = await orderQueue.clean(
+      Number(grace) || 0,
+      Number(limit) || 1000,
+      "completed"
+    );
+    const cleanedFailed = await orderQueue.clean(
+      Number(grace) || 0,
+      Number(limit) || 1000,
+      "failed"
+    );
+
+    return res.json({
+      message: "Queue cleaned successfully",
+      cleanedCompletedCount: cleanedCompleted.length,
+      cleanedFailedCount: cleanedFailed.length,
+      totalCleaned: cleanedCompleted.length + cleanedFailed.length,
+    });
+  } catch (error) {
+    console.error("Failed to clean queue:", error);
+    return res.status(500).json({ message: "Could not clean queue" });
+  }
+});
+
 app.get("/health", async (_req, res) => {
   try {
     const client = await orderQueue.client;

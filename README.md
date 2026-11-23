@@ -91,6 +91,7 @@ Fault isolation. If `mail-server` crashes because of a bad email template or a t
 | Deep health check | Live Redis ping and uptime probe via `GET /health` for container and load-balancer readiness |
 | Input validation | Strict field-by-field validation with descriptive error messages for `POST /order` |
 | Distributed tracing | Trace and correlate logs across all microservices using correlated `correlationId` |
+| Queue cleanup | Purge completed and failed jobs on-demand to free Redis memory via `POST /queue/clean` |
 | Graceful shutdown | Each service closes its BullMQ workers/queues cleanly on `SIGINT`/`SIGTERM` |
 
 ---
@@ -248,6 +249,12 @@ Check service and Redis readiness health:
 
 ```bash
 curl http://localhost:5001/health
+```
+
+Purge completed and failed jobs from Redis on demand:
+
+```bash
+curl -X POST http://localhost:5001/queue/clean
 ```
 
 ---
