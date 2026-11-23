@@ -49,8 +49,12 @@ const orders = [];
  * listeners by hand — those were never removed, so they piled up as a
  * memory leak across requests. This avoids that entirely.
  */
-async function verifyUser(userId) {
-  const job = await verifyUserQueue.add("Verify User", { userId }, DEFAULT_JOB_OPTIONS);
+async function verifyUser(userId, correlationId) {
+  const job = await verifyUserQueue.add(
+    "Verify User",
+    { userId, correlationId },
+    DEFAULT_JOB_OPTIONS
+  );
   const result = await job.waitUntilFinished(verificationQueueEvents, VERIFY_TIMEOUT_MS);
   return result; // { isValidUser, user }
 }
@@ -58,13 +62,14 @@ async function verifyUser(userId) {
 const orderWorker = new Worker(
   "order-queue",
   async (job) => {
-    const { orderId, userId, productName, price } = job.data;
-    console.log(`[order] processing ${orderId} for userId=${userId}`);
+    const { orderId, userId, productName, price, correlationId } = job.data;
+    const prefix = correlationId ? `[order][${correlationId}]` : `[order]`;
+    console.log(`${prefix} processing ${orderId} for userId=${userId}`);
 
-    const { isValidUser, user } = await verifyUser(userId);
+    const { isValidUser, user } = await verifyUser(userId, correlationId);
 
     if (!isValidUser) {
-      console.log(`[order] ${orderId} rejected — invalid userId=${userId}`);
+      console.log(`${prefix} ${orderId} rejected — invalid userId=${userId}`);
       return { orderId, status: "rejected", reason: "invalid user" };
     }
 
@@ -91,11 +96,12 @@ const orderWorker = new Worker(
         to: user.email,
         subject: `Order Confirmation - ${orderId}`,
         body: emailBody,
+        correlationId,
       },
       DEFAULT_JOB_OPTIONS
     );
 
-    console.log(`[order] ${orderId} confirmed, mail job ${mailJob.id} queued`);
+    console.log(`${prefix} ${orderId} confirmed, mail job ${mailJob.id} queued`);
     return { orderId, status: "confirmed", mailJobId: mailJob.id };
   },
   { connection }

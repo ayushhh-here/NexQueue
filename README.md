@@ -90,6 +90,7 @@ Fault isolation. If `mail-server` crashes because of a bad email template or a t
 | Recent orders list | Inspect recent order history and their execution outcomes via `GET /orders` |
 | Deep health check | Live Redis ping and uptime probe via `GET /health` for container and load-balancer readiness |
 | Input validation | Strict field-by-field validation with descriptive error messages for `POST /order` |
+| Distributed tracing | Trace and correlate logs across all microservices using correlated `correlationId` |
 | Graceful shutdown | Each service closes its BullMQ workers/queues cleanly on `SIGINT`/`SIGTERM` |
 
 ---

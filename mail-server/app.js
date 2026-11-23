@@ -52,11 +52,11 @@ async function getTransporter() {
  * Dispatches emails using Nodemailer with automatic Ethereal test account fallback.
  * Generates and logs a clickable preview URL for local inspection.
  */
-async function sendMail(from, to, subject, body) {
+async function sendMail(from, to, subject, body, prefix = "[mail]") {
   if (!to) {
     throw new Error("Cannot send mail: recipient address missing");
   }
-  console.log(`[mail] sending "${subject}" to ${to}`);
+  console.log(`${prefix} sending "${subject}" to ${to}`);
 
   const transporter = await getTransporter();
   const info = await transporter.sendMail({
@@ -68,7 +68,7 @@ async function sendMail(from, to, subject, body) {
 
   const previewUrl = nodemailer.getTestMessageUrl(info);
   if (previewUrl) {
-    console.log(`[mail] Preview URL: ${previewUrl}`);
+    console.log(`${prefix} Preview URL: ${previewUrl}`);
   }
 
   return { sent: true, to, messageId: info.messageId, previewUrl: previewUrl || null };
@@ -77,9 +77,10 @@ async function sendMail(from, to, subject, body) {
 const mailWorker = new Worker(
   "mail-queue",
   async (job) => {
-    const { from, to, subject, body } = job.data;
-    console.log(`[mail] processing job ${job.id}`);
-    return sendMail(from, to, subject, body);
+    const { from, to, subject, body, correlationId } = job.data;
+    const prefix = correlationId ? `[mail][${correlationId}]` : `[mail]`;
+    console.log(`${prefix} processing job ${job.id}`);
+    return sendMail(from, to, subject, body, prefix);
   },
   { connection }
 );

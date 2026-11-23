@@ -71,6 +71,9 @@ app.post("/order", async (req, res) => {
 
   const cleanUserId = userId.trim();
   const cleanProductName = productName.trim();
+  const correlationId =
+    req.headers["x-correlation-id"] ||
+    `corr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
   try {
     // Idempotency check: prevent duplicate job creation if key was already submitted
@@ -100,15 +103,19 @@ app.post("/order", async (req, res) => {
         userId: cleanUserId,
         productName: cleanProductName,
         price,
+        correlationId,
         ...(idempotencyKey ? { idempotencyKey } : {}),
       },
       jobOptions
     );
 
+    console.log(`[user-service][${correlationId}] accepted order ${orderId} (job ${job.id})`);
+
     return res.status(202).json({
       message: "Order accepted, processing in background",
       orderId,
       jobId: job.id,
+      correlationId,
     });
   } catch (error) {
     console.error("Failed to enqueue order:", error);
@@ -253,8 +260,9 @@ app.get("/health", async (_req, res) => {
 const verificationWorker = new Worker(
   "user-verification-queue",
   async (job) => {
-    const { userId } = job.data;
-    console.log(`[verification] received job ${job.id} for userId=${userId}`);
+    const { userId, correlationId } = job.data;
+    const prefix = correlationId ? `[verification][${correlationId}]` : `[verification]`;
+    console.log(`${prefix} received job ${job.id} for userId=${userId}`);
 
     const foundUser = userDb.find((item) => item.id === userId);
     const isValidUser = Boolean(foundUser);
@@ -263,7 +271,7 @@ const verificationWorker = new Worker(
     // eslint-disable-next-line no-unused-vars
     const { password: _password, ...rest } = foundUser || {};
 
-    console.log(`[verification] userId=${userId} valid=${isValidUser}`);
+    console.log(`${prefix} userId=${userId} valid=${isValidUser}`);
     return { isValidUser, user: isValidUser ? rest : null };
   },
   { connection }
