@@ -1,6 +1,9 @@
 require("dotenv").config({ quiet: true });
 const express = require("express");
 const { Queue, Worker } = require("bullmq");
+const { createBullBoard } = require("@bull-board/api");
+const { BullMQAdapter } = require("@bull-board/api/bullMQAdapter");
+const { ExpressAdapter } = require("@bull-board/express");
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -52,6 +55,25 @@ const DEFAULT_JOB_OPTIONS = {
 // happens asynchronously in order-server.
 // ---------------------------------------------------------------------------
 const orderQueue = new Queue("order-queue", { connection });
+const verificationQueue = new Queue("user-verification-queue", { connection });
+const mailQueue = new Queue("mail-queue", { connection });
+
+// ---------------------------------------------------------------------------
+// Bull Board: Live web UI for inspecting and managing all three queues
+// ---------------------------------------------------------------------------
+const serverAdapter = new ExpressAdapter();
+serverAdapter.setBasePath("/admin/queues");
+
+createBullBoard({
+  queues: [
+    new BullMQAdapter(orderQueue),
+    new BullMQAdapter(verificationQueue),
+    new BullMQAdapter(mailQueue),
+  ],
+  serverAdapter,
+});
+
+app.use("/admin/queues", serverAdapter.getRouter());
 
 app.post("/order", async (req, res) => {
   const { userId, productName, price, idempotencyKey: bodyIdempotencyKey } = req.body || {};
@@ -310,9 +332,10 @@ verificationWorker.on("failed", (job, err) => {
   console.error(`[verification] job ${job?.id} failed (attempt ${attempts}/${maxAttempts}):`, err.message);
 });
 
-const server = app.listen(PORT, () =>
-  console.log(`User service (HTTP producer + verification worker) started on port ${PORT}`)
-);
+const server = app.listen(PORT, () => {
+  console.log(`User service started on port ${PORT}`);
+  console.log(`Live Bull Board UI available at http://localhost:${PORT}/admin/queues`);
+});
 
 // ---------------------------------------------------------------------------
 // Graceful shutdown so Redis connections/workers close cleanly.
@@ -321,6 +344,8 @@ async function shutdown() {
   console.log("Shutting down user-service...");
   await verificationWorker.close();
   await orderQueue.close();
+  await verificationQueue.close();
+  await mailQueue.close();
   server.close(() => process.exit(0));
 }
 

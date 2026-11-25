@@ -92,6 +92,7 @@ Fault isolation. If `mail-server` crashes because of a bad email template or a t
 | Input validation | Strict field-by-field validation with descriptive error messages for `POST /order` |
 | Distributed tracing | Trace and correlate logs across all microservices using correlated `correlationId` |
 | Queue cleanup | Purge completed and failed jobs on-demand to free Redis memory via `POST /queue/clean` |
+| Live monitoring UI | Interactive web dashboard at `/admin/queues` powered by Bull Board to inspect and manage all three queues |
 | Graceful shutdown | Each service closes its BullMQ workers/queues cleanly on `SIGINT`/`SIGTERM` |
 
 ---
@@ -257,6 +258,12 @@ Purge completed and failed jobs from Redis on demand:
 curl -X POST http://localhost:5001/queue/clean
 ```
 
+Open the Bull Board live queue monitoring dashboard in your browser:
+
+```
+http://localhost:5001/admin/queues
+```
+
 ---
 
 ## What I Learned Building This
@@ -285,14 +292,14 @@ Being upfront about what this project doesn't do (yet), rather than overstating 
 - ~~No retries/backoff configured on jobs~~ **[SOLVED]**: Jobs now configure 3 attempts with exponential backoff (`delay: 1000ms`, `type: 'exponential'`) and automated Redis cleanup (`removeOnComplete: 100`, `removeOnFail: 500`), addressing the earlier single-attempt limitation.
 - Order data is stored in an in-memory array in `order-server`, not a real database — restarting the process loses all order history.
 - The mock user "database" in `user-service` is a hardcoded array with a plaintext password field, purely for demoing the verification flow — it is not a real auth system.
-- No monitoring/dashboard for queue state (Bull Board is on the roadmap).
+- ~~No monitoring/dashboard for queue state~~ **[SOLVED]**: Mounted live Bull Board UI at `/admin/queues` for real-time visual inspection and job management across all three queues.
 - No automated tests.
 
 ---
 
 ## Roadmap
 
-- [ ] Live monitoring dashboard using Bull Board UI
+- [x] Live monitoring dashboard using Bull Board UI (accessible at /admin/queues)
 - [x] Real email dispatch via Nodemailer (integrated with Ethereal test inbox and preview URLs)
 - [x] Configure retries/backoff on job creation (3 attempts + exponential backoff wired across all queues)
 - [ ] Persist orders to a real database (Postgres/Mongo)
