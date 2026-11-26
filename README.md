@@ -93,6 +93,7 @@ Fault isolation. If `mail-server` crashes because of a bad email template or a t
 | Distributed tracing | Trace and correlate logs across all microservices using correlated `correlationId` |
 | Queue cleanup | Purge completed and failed jobs on-demand to free Redis memory via `POST /queue/clean` |
 | Live monitoring UI | Interactive web dashboard at `/admin/queues` powered by Bull Board to inspect and manage all three queues |
+| Admin security | Protected Bull Board dashboard and cleanup routes with HTTP Basic Authentication |
 | Graceful shutdown | Each service closes its BullMQ workers/queues cleanly on `SIGINT`/`SIGTERM` |
 
 ---
@@ -252,13 +253,13 @@ Check service and Redis readiness health:
 curl http://localhost:5001/health
 ```
 
-Purge completed and failed jobs from Redis on demand:
+Purge completed and failed jobs from Redis on demand (protected with admin credentials):
 
 ```bash
-curl -X POST http://localhost:5001/queue/clean
+curl -u admin:nexqueue123 -X POST http://localhost:5001/queue/clean
 ```
 
-Open the Bull Board live queue monitoring dashboard in your browser:
+Open the Bull Board live queue monitoring dashboard in your browser (login with credentials `admin` / `nexqueue123` by default):
 
 ```
 http://localhost:5001/admin/queues

@@ -59,6 +59,33 @@ const verificationQueue = new Queue("user-verification-queue", { connection });
 const mailQueue = new Queue("mail-queue", { connection });
 
 // ---------------------------------------------------------------------------
+// HTTP Basic Authentication middleware for administrative endpoints
+// ---------------------------------------------------------------------------
+function basicAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Basic ")) {
+    res.setHeader("WWW-Authenticate", 'Basic realm="NexQueue Admin"');
+    return res.status(401).json({ message: "Admin authentication required" });
+  }
+
+  const base64Credentials = authHeader.split(" ")[1];
+  const credentials = Buffer.from(base64Credentials, "base64").toString("utf8");
+  const [username, ...passwordParts] = credentials.split(":");
+  const password = passwordParts.join(":");
+
+  const expectedUser = process.env.ADMIN_USER || "admin";
+  const expectedPass = process.env.ADMIN_PASSWORD || "nexqueue123";
+
+  if (username === expectedUser && password === expectedPass) {
+    return next();
+  }
+
+  res.setHeader("WWW-Authenticate", 'Basic realm="NexQueue Admin"');
+  return res.status(401).json({ message: "Invalid admin credentials" });
+}
+
+// ---------------------------------------------------------------------------
 // Bull Board: Live web UI for inspecting and managing all three queues
 // ---------------------------------------------------------------------------
 const serverAdapter = new ExpressAdapter();
@@ -73,7 +100,7 @@ createBullBoard({
   serverAdapter,
 });
 
-app.use("/admin/queues", serverAdapter.getRouter());
+app.use("/admin/queues", basicAuth, serverAdapter.getRouter());
 
 app.post("/order", async (req, res) => {
   const { userId, productName, price, idempotencyKey: bodyIdempotencyKey } = req.body || {};
@@ -255,7 +282,7 @@ app.get("/stats", async (_req, res) => {
   }
 });
 
-app.post("/queue/clean", async (req, res) => {
+app.post("/queue/clean", basicAuth, async (req, res) => {
   const { grace = 0, limit = 1000 } = req.body || {};
 
   try {
